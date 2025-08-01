@@ -1,12 +1,8 @@
 
 build.cmd
 sign.cmd
-plan.xlsm
 .venv/
 __pycache__/
-checkbox_states.json
-progress_states.json
-prep_comments.json
 build/
 dist/
 main.spec
