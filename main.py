@@ -87,39 +87,42 @@ class ImportPictures(Ui_MainWindow):
             self._set_drive_text("No USB drive connected")
 
     def import_pictures(self):
-        picture_files = []
+        if os.path.exists(PICTURES_PATH) & os.path.exists(OUTPUT):
+            picture_files = []
 
-        # Collect all picture file paths first
-        for folder in os.scandir(PICTURES_PATH):
-            for picture in os.scandir(folder.path):
-                if picture.is_file():
-                    picture_files.append(picture.path)
+            # Collect all picture file paths first
+            for folder in os.scandir(PICTURES_PATH):
+                for picture in os.scandir(folder.path):
+                    if picture.is_file():
+                        picture_files.append(picture.path)
 
-        total = len(picture_files)
-        if total == 0:
-            self._show_info("Nothing to import.")
+            total = len(picture_files)
+            if total == 0:
+                self._show_info("Nothing to import.")
+                self.progress_bar.setValue(0)
+                return
+
+            self.progress_bar.setMaximum(total)
             self.progress_bar.setValue(0)
-            return
 
-        self.progress_bar.setMaximum(total)
-        self.progress_bar.setValue(0)
+            imported_count = 0
+            for picture_path in picture_files:
+                creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(picture_path)).date()
+                self._create_new_folder(creation_date)
+                new_output = os.path.join(OUTPUT, str(creation_date))
 
-        imported_count = 0
-        for picture_path in picture_files:
-            creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(picture_path)).date()
-            self._create_new_folder(creation_date)
-            new_output = os.path.join(OUTPUT, str(creation_date))
+                try:
+                    shutil.move(picture_path, new_output)
+                    imported_count += 1
+                except Exception as e:
+                    self._show_warning(f"Could not move {picture_path}:\n{e}")
 
-            try:
-                shutil.move(picture_path, new_output)
-                imported_count += 1
-            except Exception as e:
-                self._show_warning(f"Could not move {picture_path}:\n{e}")
+                self.progress_bar.setValue(imported_count)
+                QApplication.processEvents()  # Force UI to update
 
-            self.progress_bar.setValue(imported_count)
-            QApplication.processEvents()  # Force UI to update
-
-        self._show_info(f"{imported_count} pictures imported.")
+            self._show_info(f"{imported_count} pictures imported.")
+        else:
+            self._show_error("OUTPUT or PICTURE PATH Error.")
 
     # -- Helper Functions --
     def get_absolute_path(self, relative_path):
