@@ -2,12 +2,17 @@
 
 from gui.ui_main import Ui_MainWindow
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PySide6.QtCore import Signal, QThread, QObject
+from PySide6.QtGui import QIcon
 import wmi
+import os
+import shutil
+import datetime
 
-camera_path = r"E:\DCIM"
-output = r"C:\Users\tnsva\Pictures\Raw"
+PICTURES_PATH = r"E:\DCIM"
+OUTPUT = r"C:\Users\tnsva\Pictures\Raw"
+ICON_PATH = r"assets\camera.ico"
 
 
 class USBWorker(QObject):
@@ -57,10 +62,13 @@ class ImportPictures(Ui_MainWindow):
         self.window = window
         self.setupUi(self.window)
 
-        self.window.setWindowTitle("Import Pictures")
-
-        self.set_dir_btn.clicked.connect(self.set_directory)
+        self.window.setWindowTitle("Simple Importer")
+        self.window.setWindowIcon(QIcon(self.get_absolute_path(ICON_PATH)))
         self.import_btn.clicked.connect(self.import_pictures)
+
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
 
         # Start USB flash drive listener in worker thread
         self._usb_thread = QThread()
@@ -79,18 +87,55 @@ class ImportPictures(Ui_MainWindow):
             self._set_drive_text("No USB drive connected")
 
     def import_pictures(self):
-        self._show_info("Nothing here yet.")
+        picture_files = []
 
-    def set_directory(self):
-        file_location = QFileDialog.getExistingDirectory(caption="Choose dir")
-        self._set_label_text(f"{file_location}")
+        # Collect all picture file paths first
+        for folder in os.scandir(PICTURES_PATH):
+            for picture in os.scandir(folder.path):
+                if picture.is_file():
+                    picture_files.append(picture.path)
+
+        total = len(picture_files)
+        if total == 0:
+            self._show_info("Nothing to import.")
+            self.progress_bar.setValue(0)
+            return
+
+        self.progress_bar.setMaximum(total)
+        self.progress_bar.setValue(0)
+
+        imported_count = 0
+        for picture_path in picture_files:
+            creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(picture_path)).date()
+            self._create_new_folder(creation_date)
+            new_output = os.path.join(OUTPUT, str(creation_date))
+
+            try:
+                shutil.move(picture_path, new_output)
+                imported_count += 1
+            except Exception as e:
+                self._show_warning(f"Could not move {picture_path}:\n{e}")
+
+            self.progress_bar.setValue(imported_count)
+            QApplication.processEvents()  # Force UI to update
+
+        self._show_info(f"{imported_count} pictures imported.")
 
     # -- Helper Functions --
+    def get_absolute_path(self, relative_path):
+        """Get absolute path to resource, works for dev and for PyInstaller."""
+        try:
+            base_path = sys._MEIPASS
+        except AttributeError:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+
+    def _create_new_folder(self, date):
+        if not os.path.exists(f"{OUTPUT}/{date}"):
+            os.mkdir(os.path.join(OUTPUT, f"{date}"))
+
     def _set_drive_text(self, text):
         self.drive_info_lbl.setText(text)
-
-    def _set_label_text(self, text):
-        self.directory_lbl.setText(text)
 
     def _show_warning(self, message):
         QMessageBox.warning(self.window, "Warning", message)
