@@ -6,6 +6,9 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialo
 from PySide6.QtCore import Signal, QThread, QObject
 import wmi
 
+camera_path = r"E:\DCIM"
+output = r"C:\Users\tnsva\Pictures\Raw"
+
 
 class USBWorker(QObject):
     device_found = Signal(object)  # emits device info tuple or None
