@@ -32,12 +32,22 @@ class USBWorker(QObject):
         for disk in c.Win32_DiskDrive():
             if "USB" not in disk.PNPDeviceID:
                 continue
-            for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                    letter = logical_disk.DeviceID
-                    label = logical_disk.VolumeName or "No Label"
-                    device = (letter, label)
-                    break
+            # Check for Sony camera
+            if "Sony" in disk.Model:
+                label = disk.Model
+                # Find drive letter
+                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                        letter = logical_disk.DeviceID
+                        device = (letter, f"Sony Camera: {label}")
+                        break
+            else:
+                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                        letter = logical_disk.DeviceID
+                        label = logical_disk.VolumeName or "No Label"
+                        device = (letter, label)
+                        break
         self.device_found.emit(device)
         previous_device = device
         while self._running:
@@ -45,12 +55,20 @@ class USBWorker(QObject):
             for disk in c.Win32_DiskDrive():
                 if "USB" not in disk.PNPDeviceID:
                     continue
-                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                        letter = logical_disk.DeviceID
-                        label = logical_disk.VolumeName or "No Label"
-                        device = (letter, label)
-                        break
+                if "Sony" in disk.Model:
+                    label = disk.Model
+                    for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                        for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                            letter = logical_disk.DeviceID
+                            device = (letter, f"Sony Camera: {label}")
+                            break
+                else:
+                    for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
+                        for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
+                            letter = logical_disk.DeviceID
+                            label = logical_disk.VolumeName or "No Label"
+                            device = (letter, label)
+                            break
             if device != previous_device:
                 self.device_found.emit(device)
                 previous_device = device
