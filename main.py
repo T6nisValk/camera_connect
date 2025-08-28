@@ -2,77 +2,44 @@
 
 from gui.ui_main import Ui_MainWindow
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
-from PySide6.QtCore import Signal, QThread, QObject
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
+from PySide6.QtCore import Signal, QThread, QObject, Slot, Qt
 from PySide6.QtGui import QIcon
-import wmi
 import os
+import time
 import shutil
 import datetime
 
-PICTURES_PATH = r"E:\DCIM"
-OUTPUT = r"C:\Users\tnsva\Pictures\Raw"
+SOURCE_PATH = r"C:\Users\valk_to\Desktop\source"
+DEFAULT_OUTPUT_PATH = r"C:\Users\valk_to\Desktop\output"
 ICON_PATH = r"assets\camera.ico"
 
 
-class USBWorker(QObject):
-    device_found = Signal(object)  # emits device info tuple or None
+class IterateImages(QObject):
+    finished_work = Signal()
+    progress = Signal(int)
+    file_count = Signal(int)
+    error = Signal(str)
 
     def __init__(self):
         super().__init__()
-        self._running = True
-
-    def stop(self):
-        self._running = False
 
     def run(self):
-        c = wmi.WMI()
-        previous_device = None
-        device = None
-        for disk in c.Win32_DiskDrive():
-            if "USB" not in disk.PNPDeviceID:
-                continue
-            # Check for Sony camera
-            if "Sony" in disk.Model:
-                label = disk.Model
-                # Find drive letter
-                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                        letter = logical_disk.DeviceID
-                        device = (letter, f"Sony Camera: {label}")
-                        break
-            else:
-                for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                    for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                        letter = logical_disk.DeviceID
-                        label = logical_disk.VolumeName or "No Label"
-                        device = (letter, label)
-                        break
-        self.device_found.emit(device)
-        previous_device = device
-        while self._running:
-            device = None
-            for disk in c.Win32_DiskDrive():
-                if "USB" not in disk.PNPDeviceID:
-                    continue
-                if "Sony" in disk.Model:
-                    label = disk.Model
-                    for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                        for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                            letter = logical_disk.DeviceID
-                            device = (letter, f"Sony Camera: {label}")
-                            break
-                else:
-                    for partition in disk.associators("Win32_DiskDriveToDiskPartition"):
-                        for logical_disk in partition.associators("Win32_LogicalDiskToPartition"):
-                            letter = logical_disk.DeviceID
-                            label = logical_disk.VolumeName or "No Label"
-                            device = (letter, label)
-                            break
-            if device != previous_device:
-                self.device_found.emit(device)
-                previous_device = device
-            QThread.msleep(2000)
+        try:
+            total_files = self.count_files()
+            self.file_count.emit(total_files)
+            for i in range(1, total_files + 1):
+                self.progress.emit(i)
+                time.sleep(0.1)
+            self.finished_work.emit()
+        except Exception as e:
+            self.error.emit(str(e))
+
+    def count_files(self):
+        with os.scandir(SOURCE_PATH) as entries:
+            file_count = sum(1 for entry in entries if entry.is_file())
+
+        return int(file_count)
 
 
 class ImportPictures(Ui_MainWindow):
@@ -80,67 +47,69 @@ class ImportPictures(Ui_MainWindow):
         self.window = window
         self.setupUi(self.window)
 
+        self.main_threads = {}
+        self.output_path = DEFAULT_OUTPUT_PATH
         self.window.setWindowTitle("Simple Importer")
         self.window.setWindowIcon(QIcon(self.get_absolute_path(ICON_PATH)))
+
+        # Signals
+        self.new_output_btn.clicked.connect(self.set_new_output_path)
         self.import_btn.clicked.connect(self.import_pictures)
+        self.progress_bar.valueChanged.connect(self.update_progress_color)
 
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(0)
+    def set_progress_maximum(self, value):
+        self.progress_bar.setMaximum(value)
 
-        # Start USB flash drive listener in worker thread
-        self._usb_thread = QThread()
-        self._usb_worker = USBWorker()
-        self._usb_worker.moveToThread(self._usb_thread)
-        self._usb_worker.device_found.connect(self.on_device_found)
-
-        self._usb_thread.started.connect(self._usb_worker.run)
-        self._usb_thread.start()
-
-    def on_device_found(self, device):
-        if device:
-            letter, label = device
-            self._set_drive_text(f"Connected Drive: {letter} ({label})")
+    def update_progress_color(self, value):
+        if value < self.progress_bar.maximum():
+            self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: rgb(200, 160, 0);}")
         else:
-            self._set_drive_text("No USB drive connected")
+            self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: rgb(0, 160, 112);}")
+            self.progress_bar.setFormat(f"Done Importing {self.progress_bar.maximum()} Images!")
+
+    def set_new_output_path(self):
+        try:
+            self.output_path = QFileDialog.getExistingDirectory(self.window, caption="Choose A Folder")
+        except Exception as e:
+            self._show_error(str(e))
 
     def import_pictures(self):
-        if os.path.exists(PICTURES_PATH) & os.path.exists(OUTPUT):
-            picture_files = []
+        try:
+            self.import_btn.setDisabled(True)
+            thread = QThread()
+            worker = IterateImages()
+            worker.moveToThread(thread)
 
-            # Collect all picture file paths first
-            for folder in os.scandir(PICTURES_PATH):
-                for picture in os.scandir(folder.path):
-                    if picture.is_file():
-                        picture_files.append(picture.path)
+            thread.started.connect(worker.run)
+            worker.file_count.connect(self.set_progress_maximum)
+            worker.progress.connect(self.update_progress)
+            worker.error.connect(self._show_error)
+            worker.finished_work.connect(self.finish)
 
-            total = len(picture_files)
-            if total == 0:
-                self._show_info("Nothing to import.")
-                self.progress_bar.setValue(0)
-                return
+            worker.finished_work.connect(thread.quit)
+            thread.finished.connect(lambda: self.cleanup_threads(thread))
 
-            self.progress_bar.setMaximum(total)
-            self.progress_bar.setValue(0)
+            worker.finished_work.connect(worker.deleteLater)
+            thread.finished.connect(thread.deleteLater)
+            thread.start()
+            self.main_threads[worker] = thread
 
-            imported_count = 0
-            for picture_path in picture_files:
-                creation_date = datetime.datetime.fromtimestamp(os.path.getmtime(picture_path)).date()
-                self._create_new_folder(creation_date)
-                new_output = os.path.join(OUTPUT, str(creation_date))
+        except Exception as e:
+            self._show_error(str(e))
 
-                try:
-                    shutil.move(picture_path, new_output)
-                    imported_count += 1
-                except Exception as e:
-                    self._show_warning(f"Could not move {picture_path}:\n{e}")
+    def finish(self):
+        self.import_btn.setEnabled(True)
 
-                self.progress_bar.setValue(imported_count)
-                QApplication.processEvents()  # Force UI to update
+    def cleanup_threads(self, thread: QThread):
+        try:
+            if thread in self.main_threads.values():
+                thread.quit()
+                thread.wait()
+        except Exception as e:
+            self._show_error(str(e))
 
-            self._show_info(f"{imported_count} pictures imported.")
-        else:
-            self._show_error("OUTPUT or PICTURE PATH Error.")
+    def update_progress(self, value):
+        self.progress_bar.setValue(value)
 
     # -- Helper Functions --
     def get_absolute_path(self, relative_path):
@@ -150,13 +119,6 @@ class ImportPictures(Ui_MainWindow):
         except AttributeError:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, relative_path)
-
-    def _create_new_folder(self, date):
-        if not os.path.exists(f"{OUTPUT}/{date}"):
-            os.mkdir(os.path.join(OUTPUT, f"{date}"))
-
-    def _set_drive_text(self, text):
-        self.drive_info_lbl.setText(text)
 
     def _show_warning(self, message):
         QMessageBox.warning(self.window, "Warning", message)

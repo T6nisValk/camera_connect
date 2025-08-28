@@ -7,42 +7,41 @@
     <x>0</x>
     <y>0</y>
     <width>274</width>
-    <height>82</height>
+    <height>94</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QProgressBar {
+	min-height: 15px;
+	border : 1px solid rgb(0, 0, 0);
+	border-radius: 6px;
+	text-align: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: #FFFFFF;
+	padding: 0;
+}
+QProgressBar::chunk{
+	border-radius: 6px;
+	margin: 0;
+}
+QProgressBar[finished=&quot;true&quot;]::chunk {
+    background-color: #3caa3c;
+}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="1">
-     <widget class="QPushButton" name="import_btn">
-      <property name="text">
-       <string>Import</string>
+    <item row="0" column="0" colspan="4">
+     <widget class="QProgressBar" name="progress_bar">
+      <property name="value">
+       <number>0</number>
       </property>
      </widget>
     </item>
-    <item row="0" column="0" colspan="3">
-     <widget class="QLabel" name="drive_info_lbl">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <spacer name="horizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="2" column="2">
+    <item row="1" column="3">
      <spacer name="horizontalSpacer_2">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
@@ -55,10 +54,30 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="0" colspan="3">
-     <widget class="QProgressBar" name="progress_bar">
-      <property name="value">
-       <number>24</number>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="import_btn">
+      <property name="text">
+       <string>Import</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="new_output_btn">
+      <property name="text">
+       <string>New Output</string>
       </property>
      </widget>
     </item>
