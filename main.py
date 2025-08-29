@@ -3,10 +3,9 @@
 from gui.ui_main import Ui_MainWindow
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
-from PySide6.QtCore import Signal, QThread, QObject, Slot, Qt
+from PySide6.QtCore import Signal, QThread, QObject
 from PySide6.QtGui import QIcon
 import os
-import time
 import shutil
 import datetime
 
@@ -19,47 +18,36 @@ class IterateImages(QObject):
     finished_work = Signal()
     progress = Signal(int)
     file_count = Signal(int)
-    error = Signal(str)
 
     def __init__(self, output_path):
         super().__init__()
         self.output_path = output_path
 
     def run(self):
-        try:
-            total_files = self.count_files()
-            self.file_count.emit(total_files)
-            processed = 0
-            for image in os.scandir(SOURCE_PATH):
-                c_time = os.path.getmtime(image.path)
-                creation_date = datetime.datetime.fromtimestamp(c_time).strftime(r"%Y-%m-%d")
-                creation_date_folder = f"{DEFAULT_OUTPUT_PATH}/{creation_date}"
-                jpg_folder = f"{creation_date_folder}/JPG"
-                raw_folder = f"{creation_date_folder}/RAW"
-                self.make_directories([creation_date_folder, jpg_folder, raw_folder])
-                self.move_image(image, raw_folder, jpg_folder)
-                processed += 1
-                self.progress.emit(processed)
-
-            self.finished_work.emit()
-        except Exception as e:
-            self.error.emit(f"Error: {e}")
+        total_files = self.count_files()
+        self.file_count.emit(total_files)
+        processed = 0
+        for image in os.scandir(SOURCE_PATH):
+            c_time = os.path.getmtime(image.path)
+            creation_date = datetime.datetime.fromtimestamp(c_time).strftime(r"%Y-%m-%d")
+            creation_date_folder = f"{DEFAULT_OUTPUT_PATH}/{creation_date}"
+            jpg_folder = f"{creation_date_folder}/JPG"
+            raw_folder = f"{creation_date_folder}/RAW"
+            self.make_directories([creation_date_folder, jpg_folder, raw_folder])
+            self.move_image(image, raw_folder, jpg_folder)
+            processed += 1
+            self.progress.emit(processed)
+        self.finished_work.emit()
 
     def move_image(self, image: os.DirEntry, raw_folder: os.path, jpg_folder: os.path):
-        try:
-            if image.name.lower().endswith(("jpg", "jpeg")):
-                shutil.copy(image.path, jpg_folder)
-            elif image.name.lower().endswith("arw"):
-                shutil.copy(image.path, raw_folder)
-        except Exception as e:
-            self.error.emit(f"Error moving {image.name}: {e}")
+        if image.name.lower().endswith(("jpg", "jpeg")):
+            shutil.copy(image.path, jpg_folder)
+        elif image.name.lower().endswith("arw"):
+            shutil.copy(image.path, raw_folder)
 
     def make_directories(self, paths: list):
-        try:
-            for path in paths:
-                os.makedirs(path, exist_ok=Trdue)
-        except Exception as e:
-            self.error.emit(f"Error making directory {path}: {e}")
+        for path in paths:
+            os.makedirs(path, exist_ok=True)
 
     def count_files(self):
         with os.scandir(SOURCE_PATH) as entries:
@@ -69,8 +57,6 @@ class IterateImages(QObject):
 
 
 class ImportPictures(Ui_MainWindow):
-    show_error_signal = Signal(str)
-
     def __init__(self, window):
         self.window = window
         self.setupUi(self.window)
@@ -81,7 +67,6 @@ class ImportPictures(Ui_MainWindow):
         self.window.setWindowIcon(QIcon(self.get_absolute_path(ICON_PATH)))
 
         # Signals
-        self.show_error_signal.connect(self._show_error)
         self.new_output_btn.clicked.connect(self.set_new_output_path)
         self.import_btn.clicked.connect(self.import_pictures)
         self.progress_bar.valueChanged.connect(self.update_progress_color)
@@ -113,7 +98,6 @@ class ImportPictures(Ui_MainWindow):
             thread.started.connect(worker.run)
             worker.file_count.connect(self.set_progress_maximum)
             worker.progress.connect(self.update_progress)
-            worker.error.connect(self.show_error_signal)
             worker.finished_work.connect(self.finish)
 
             worker.finished_work.connect(thread.quit)
@@ -153,7 +137,6 @@ class ImportPictures(Ui_MainWindow):
     def _show_warning(self, message):
         QMessageBox.warning(self.window, "Warning", message)
 
-@Slot(str)
     def _show_error(self, message):
         QMessageBox.critical(self.window, "Error", message)
 
