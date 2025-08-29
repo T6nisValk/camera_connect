@@ -30,7 +30,7 @@ class IterateImages(QObject):
         for image in os.scandir(SOURCE_PATH):
             c_time = os.path.getmtime(image.path)
             creation_date = datetime.datetime.fromtimestamp(c_time).strftime(r"%Y-%m-%d")
-            creation_date_folder = f"{DEFAULT_OUTPUT_PATH}/{creation_date}"
+            creation_date_folder = f"{self.output_path}/{creation_date}"
             jpg_folder = f"{creation_date_folder}/JPG"
             raw_folder = f"{creation_date_folder}/RAW"
             self.make_directories([creation_date_folder, jpg_folder, raw_folder])
@@ -83,7 +83,10 @@ class ImportPictures(Ui_MainWindow):
 
     def set_new_output_path(self):
         try:
-            self.output_path = QFileDialog.getExistingDirectory(self.window, caption="Choose A Folder")
+            self.output_path = QFileDialog.getExistingDirectory(
+                self.window, caption="Choose A Folder", dir=self.output_path
+            )
+            print(self.output_path)
         except Exception as e:
             self._show_error(str(e))
 
