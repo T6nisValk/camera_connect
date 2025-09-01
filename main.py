@@ -1,59 +1,14 @@
 """Program to import pictures from a camera and organize them into folders by capture date."""
 
 from gui.ui_main import Ui_MainWindow
+from image_worker import IterateImages
+from paths import DEFAULT_OUTPUT_PATH, ICON_PATH, SOURCE_PATH
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
-from PySide6.QtCore import Signal, QThread, QObject
+from PySide6.QtCore import QThread
 from PySide6.QtGui import QIcon
 import os
-import shutil
-import datetime
-
-SOURCE_PATH = r"C:\Users\valk_to\Desktop\source"
-DEFAULT_OUTPUT_PATH = r"C:\Users\valk_to\Desktop\output"
-ICON_PATH = r"assets\camera.ico"
-
-
-class IterateImages(QObject):
-    finished_work = Signal()
-    progress = Signal(int)
-    file_count = Signal(int)
-
-    def __init__(self, output_path):
-        super().__init__()
-        self.output_path = output_path
-
-    def run(self):
-        total_files = self.count_files()
-        self.file_count.emit(total_files)
-        processed = 0
-        for image in os.scandir(SOURCE_PATH):
-            c_time = os.path.getmtime(image.path)
-            creation_date = datetime.datetime.fromtimestamp(c_time).strftime(r"%Y-%m-%d")
-            creation_date_folder = f"{self.output_path}/{creation_date}"
-            jpg_folder = f"{creation_date_folder}/JPG"
-            raw_folder = f"{creation_date_folder}/RAW"
-            self.make_directories([creation_date_folder, jpg_folder, raw_folder])
-            self.move_image(image, raw_folder, jpg_folder)
-            processed += 1
-            self.progress.emit(processed)
-        self.finished_work.emit()
-
-    def move_image(self, image: os.DirEntry, raw_folder: os.path, jpg_folder: os.path):
-        if image.name.lower().endswith(("jpg", "jpeg")):
-            shutil.copy(image.path, jpg_folder)
-        elif image.name.lower().endswith("arw"):
-            shutil.copy(image.path, raw_folder)
-
-    def make_directories(self, paths: list):
-        for path in paths:
-            os.makedirs(path, exist_ok=True)
-
-    def count_files(self):
-        with os.scandir(SOURCE_PATH) as entries:
-            file_count = sum(1 for entry in entries if entry.is_file())
-
-        return int(file_count)
+import traceback
 
 
 class ImportPictures(Ui_MainWindow):
@@ -87,43 +42,49 @@ class ImportPictures(Ui_MainWindow):
                 self.window, caption="Choose A Folder", dir=self.output_path
             )
             print(self.output_path)
-        except Exception as e:
-            self._show_error(str(e))
+        except Exception:
+            self._show_error(traceback.format_exc())
 
     def import_pictures(self):
         try:
             self.progress_bar.resetFormat()
             self.import_btn.setDisabled(True)
             thread = QThread()
-            worker = IterateImages(self.output_path)
-            worker.moveToThread(thread)
+            worker = IterateImages(self.output_path, SOURCE_PATH)
+
+            # worker.moveToThread(thread)
 
             thread.started.connect(worker.run)
-            worker.file_count.connect(self.set_progress_maximum)
-            worker.progress.connect(self.update_progress)
             worker.finished_work.connect(self.finish)
+            worker.progress.connect(self.update_progress)
+            worker.file_count.connect(self.set_progress_maximum)
+            worker.error.connect(self.on_error)
 
             worker.finished_work.connect(thread.quit)
-            thread.finished.connect(lambda: self.cleanup_threads(thread))
+            thread.finished.connect(lambda: self.cleanup_threads(thread, worker))
 
-            worker.finished_work.connect(worker.deleteLater)
             thread.finished.connect(thread.deleteLater)
+            worker.finished_work.connect(worker.deleteLater)
+
             thread.start()
             self.main_threads[worker] = thread
 
-        except Exception as e:
-            self._show_error(str(e))
+        except Exception:
+            self._show_error(traceback.format_exc())
+
+    def on_error(self, error: str):
+        self._show_error(error)
 
     def finish(self):
         self.import_btn.setEnabled(True)
 
-    def cleanup_threads(self, thread: QThread):
+    def cleanup_threads(self, thread: QThread, worker: IterateImages):
         try:
-            if thread.isRunning():
-                thread.quit()
+            if thread in self.main_threads.values():
                 thread.wait()
-        except Exception as e:
-            self._show_error(str(e))
+                del self.main_threads[worker]
+        except Exception:
+            self._show_error(traceback.format_exc())
 
     def update_progress(self, value):
         self.progress_bar.setValue(value)
