@@ -1,3 +1,5 @@
-SOURCE_PATH = r"C:\Users\valk_to\Desktop\source"
-DEFAULT_OUTPUT_PATH = r"C:\Users\valk_to\Desktop\output"
+SOURCE_PATH = r"E:\DCIM\101MSDCF"
+DEFAULT_OUTPUT_PATH = r"C:\Users\tnsva\Pictures\Raw"
 ICON_PATH = r"assets\camera.ico"
+PICTURES_PATH = r"E:\DCIM\101MSDCF"
+OUTPUT = r"C:\Users\tnsva\Pictures\Raw"
