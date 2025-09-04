@@ -1,6 +1,6 @@
 """Program to import pictures from a camera and organize them into folders by capture date."""
 
-from gui.ui_main import Ui_MainWindow
+from gui.main_ui import Ui_MainWindow
 from image_worker import IterateImages
 from paths import DEFAULT_OUTPUT_PATH, ICON_PATH, SOURCE_PATH
 import sys
@@ -47,10 +47,19 @@ class ImportPictures(Ui_MainWindow):
 
     def import_pictures(self):
         try:
+            if not self.jpg_checkbox.isChecked() and not self.raw_checkbox.isChecked():
+                self._show_error("No file type selected.")
+                return
+
             self.progress_bar.resetFormat()
             self.import_btn.setDisabled(True)
             thread = QThread()
-            worker = IterateImages(self.output_path, SOURCE_PATH)
+
+            worker = IterateImages(
+                self.output_path,
+                SOURCE_PATH,
+                {"jpg": self.jpg_checkbox.checkState(), "raw": self.raw_checkbox.checkState()},
+            )
 
             # worker.moveToThread(thread)
 

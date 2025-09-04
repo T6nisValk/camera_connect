@@ -1,8 +1,11 @@
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal, QObject, Qt
 import shutil
 import os
 import datetime
 import traceback
+
+RAW_FILES = (".arw",)
+JPG_FILES = (".jpg", ".jpeg")
 
 
 class IterateImages(QObject):
@@ -11,14 +14,15 @@ class IterateImages(QObject):
     file_count = Signal(int)
     error = Signal(str)
 
-    def __init__(self, output_path, source_path):
+    def __init__(self, output_path, source_path, check_states: dict):
         super().__init__()
         self.output_path = output_path
         self.source_path = source_path
+        self.jpg_check, self.raw_check = check_states.values()
 
     def run(self):
         try:
-            self.count_files()
+            self.check_states_before_counting(self.jpg_check, self.raw_check)
             self.process_images()
             self.finished_work.emit()
         except Exception:
@@ -33,22 +37,57 @@ class IterateImages(QObject):
             creation_date_folder = f"{self.output_path}/{creation_date}"
             jpg_folder = f"{creation_date_folder}/JPG"
             raw_folder = f"{creation_date_folder}/RAW"
-            self.make_directories([creation_date_folder, jpg_folder, raw_folder])
-            self.move_image(image, raw_folder, jpg_folder)
-            processed += 1
-            self.progress.emit(processed)
 
-    def move_image(self, image: os.DirEntry, raw_folder: os.path, jpg_folder: os.path):
-        if image.name.lower().endswith(("jpg", "jpeg")):
-            shutil.copy(image.path, jpg_folder)
-        elif image.name.lower().endswith("arw"):
+            copied = False
+
+            # --- Decide which folders to create ---
+            if self.jpg_check == Qt.CheckState.Checked and self.raw_check == Qt.CheckState.Checked:
+                self.make_directories([creation_date_folder, jpg_folder, raw_folder])
+                copied = self.move_image(image, raw_folder=raw_folder, jpg_folder=jpg_folder)
+
+            elif self.jpg_check == Qt.CheckState.Checked:
+                self.make_directories([creation_date_folder, jpg_folder])
+                copied = self.move_image(image, jpg_folder=jpg_folder)
+
+            elif self.raw_check == Qt.CheckState.Checked:
+                self.make_directories([creation_date_folder, raw_folder])
+                copied = self.move_image(image, raw_folder=raw_folder)
+
+            # Only count if something was copied
+            if copied:
+                processed += 1
+                self.progress.emit(processed)
+
+    def move_image(self, image: os.DirEntry, raw_folder: str = None, jpg_folder: str = None) -> bool:
+        copied = False
+        if raw_folder and image.name.lower().endswith(".arw"):
             shutil.copy(image.path, raw_folder)
+            copied = True
+
+        if jpg_folder and image.name.lower().endswith((".jpg", ".jpeg")):
+            shutil.copy(image.path, jpg_folder)
+            copied = True
+
+        return copied
 
     def make_directories(self, paths: list):
         for path in paths:
             os.makedirs(path, exist_ok=True)
 
-    def count_files(self):
+    def check_states_before_counting(self, jpg_check: Qt.CheckState, raw_check: Qt.CheckState):
+        if jpg_check == Qt.CheckState.Checked and self.raw_check == Qt.CheckState.Checked:
+            suffix = RAW_FILES + JPG_FILES
+            self.count_files(suffix)
+        elif jpg_check == Qt.CheckState.Checked:
+            self.count_files(JPG_FILES)
+        elif raw_check == Qt.CheckState.Checked:
+            self.count_files(RAW_FILES)
+
+    def count_files(self, suffix: set):
         with os.scandir(self.source_path) as entries:
-            file_count = sum(1 for entry in entries if entry.is_file())
-        self.file_count.emit(file_count)
+            file_count = sum(1 for entry in entries if entry.is_file() and entry.name.lower().endswith(suffix))
+        if file_count <= 0:
+            self.error.emit("Nothing to import.")
+            self.finished_work.emit()
+        else:
+            self.file_count.emit(file_count)
