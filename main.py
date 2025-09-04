@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialo
 from PySide6.QtCore import QThread
 from PySide6.QtGui import QIcon
 import os
-import traceback
 
 
 class ImportPictures(Ui_MainWindow):
@@ -42,8 +41,8 @@ class ImportPictures(Ui_MainWindow):
                 self.window, caption="Choose A Folder", dir=self.output_path
             )
             print(self.output_path)
-        except Exception:
-            self._show_error(traceback.format_exc())
+        except Exception as e:
+            self._show_error(str(e))
 
     def import_pictures(self):
         try:
@@ -78,8 +77,8 @@ class ImportPictures(Ui_MainWindow):
             thread.start()
             self.main_threads[worker] = thread
 
-        except Exception:
-            self._show_error(traceback.format_exc())
+        except Exception as e:
+            self._show_error(str(e))
 
     def on_error(self, error: str):
         self._show_error(error)
@@ -92,8 +91,8 @@ class ImportPictures(Ui_MainWindow):
             if thread in self.main_threads.values():
                 thread.wait()
                 del self.main_threads[worker]
-        except Exception:
-            self._show_error(traceback.format_exc())
+        except Exception as e:
+            self._show_error(str(e))
 
     def update_progress(self, value):
         self.progress_bar.setValue(value)

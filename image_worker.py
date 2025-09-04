@@ -2,7 +2,6 @@ from PySide6.QtCore import Signal, QObject, Qt
 import shutil
 import os
 import datetime
-import traceback
 
 RAW_FILES = (".arw",)
 JPG_FILES = (".jpg", ".jpeg")
@@ -25,8 +24,8 @@ class IterateImages(QObject):
             self.check_states_before_counting(self.jpg_check, self.raw_check)
             self.process_images()
             self.finished_work.emit()
-        except Exception:
-            self.error.emit(traceback.format_exc())
+        except Exception as e:
+            self.error.emit(str(e))
             self.finished_work.emit()
 
     def process_images(self):
