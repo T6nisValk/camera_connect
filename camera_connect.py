@@ -25,9 +25,6 @@ class ImportPictures(QObject, Ui_MainWindow):
         self.import_btn.clicked.connect(self.import_pictures)
         self.progress_bar.valueChanged.connect(self.update_progress_color)
 
-    def set_progress_maximum(self, value):
-        self.progress_bar.setMaximum(value)
-
     def update_progress_color(self, value):
         if value < self.progress_bar.maximum():
             self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: rgb(200, 160, 0);}")
@@ -38,7 +35,6 @@ class ImportPictures(QObject, Ui_MainWindow):
     def set_new_output_path(self):
         try:
             self.output_path = QFileDialog.getExistingDirectory(self.window, caption="Choose A Folder", dir=self.output_path)
-            print(self.output_path)
         except Exception as e:
             self._show_error(str(e))
 
@@ -61,26 +57,19 @@ class ImportPictures(QObject, Ui_MainWindow):
 
         thread.started.connect(worker.run)
 
-        worker.progress.connect(self.update_progress)
-        worker.file_count.connect(self.set_progress_maximum)
+        worker.progress.connect(lambda value: self.progress_bar.setValue(value))
+        worker.file_count.connect(lambda value: self.progress_bar.setMaximum(value))
         worker.error.connect(self._show_error)
 
-        worker.finished.connect(self._reset_button)
-        worker.finished.connect(thread.quit)
+        worker.finished.connect(lambda: self.import_btn.setEnabled(True))
         thread.finished.connect(lambda: self.cleanup_threads(thread, worker))
 
         thread.start()
-
-    def _reset_button(self):
-        self.import_btn.setEnabled(True)
 
     def cleanup_threads(self, thread: QThread, worker: QObject):
         thread.quit()
         thread.deleteLater()
         worker.deleteLater()
-
-    def update_progress(self, value):
-        self.progress_bar.setValue(value)
 
     # -- Helper Functions --
     def get_absolute_path(self, relative_path):
@@ -91,11 +80,5 @@ class ImportPictures(QObject, Ui_MainWindow):
             base_path = os.path.abspath(".")
         return os.path.join(base_path, relative_path)
 
-    def _show_warning(self, message):
-        QMessageBox.warning(self.window, "Warning", message)
-
     def _show_error(self, message):
         QMessageBox.critical(self.window, "Error", message)
-
-    def _show_info(self, message):
-        QMessageBox.information(self.window, "Info", message)

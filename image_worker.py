@@ -24,15 +24,13 @@ class IterateImages(QObject):
             file_count = self.check_states_before_counting(self.jpg_check, self.raw_check)
             if file_count > 0:
                 self.process_images()
+                self.finished.emit()
             else:
                 self.finished.emit()
-                return
 
-            self.finished.emit()
         except Exception as e:
             self.error.emit(str(e))
             self.finished.emit()
-            return
 
     def process_images(self):
         processed = 0
