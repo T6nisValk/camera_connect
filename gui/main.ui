@@ -54,6 +54,12 @@ QProgressBar[finished=&quot;true&quot;]::chunk {
    <layout class="QGridLayout" name="gridLayout">
     <item row="3" column="2">
      <widget class="QPushButton" name="new_output_btn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="text">
        <string>New Output</string>
       </property>
@@ -72,7 +78,7 @@ QProgressBar[finished=&quot;true&quot;]::chunk {
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
+       <enum>QSizePolicy::Policy::Expanding</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -95,7 +101,7 @@ QProgressBar[finished=&quot;true&quot;]::chunk {
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <property name="sizeType">
-       <enum>QSizePolicy::Policy::Fixed</enum>
+       <enum>QSizePolicy::Policy::Expanding</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>

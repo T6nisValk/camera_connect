@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'main.ui'
+## Form generated from reading UI file 'mainqWqOZP.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -54,6 +54,11 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName(u"gridLayout")
         self.new_output_btn = QPushButton(self.centralwidget)
         self.new_output_btn.setObjectName(u"new_output_btn")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.new_output_btn.sizePolicy().hasHeightForWidth())
+        self.new_output_btn.setSizePolicy(sizePolicy1)
 
         self.gridLayout.addWidget(self.new_output_btn, 3, 2, 1, 1)
 
@@ -63,7 +68,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.progress_bar, 0, 0, 1, 4)
 
-        self.horizontalSpacer = QSpacerItem(75, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer = QSpacerItem(75, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.gridLayout.addItem(self.horizontalSpacer, 3, 0, 1, 1)
 
@@ -72,7 +77,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.import_btn, 3, 1, 1, 1)
 
-        self.horizontalSpacer_2 = QSpacerItem(75, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(75, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.gridLayout.addItem(self.horizontalSpacer_2, 3, 3, 1, 1)
 
