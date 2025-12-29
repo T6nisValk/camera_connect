@@ -8,7 +8,7 @@ JPG_FILES = (".jpg", ".jpeg")
 
 
 class IterateImages(QObject):
-    finished_work = Signal()
+    finished = Signal()
     progress = Signal(int)
     file_count = Signal(int)
     error = Signal(str)
@@ -21,12 +21,18 @@ class IterateImages(QObject):
 
     def run(self):
         try:
-            self.check_states_before_counting(self.jpg_check, self.raw_check)
-            self.process_images()
-            self.finished_work.emit()
+            file_count = self.check_states_before_counting(self.jpg_check, self.raw_check)
+            if file_count > 0:
+                self.process_images()
+            else:
+                self.finished.emit()
+                return
+
+            self.finished.emit()
         except Exception as e:
             self.error.emit(str(e))
-            self.finished_work.emit()
+            self.finished.emit()
+            return
 
     def process_images(self):
         processed = 0
@@ -76,17 +82,19 @@ class IterateImages(QObject):
     def check_states_before_counting(self, jpg_check: Qt.CheckState, raw_check: Qt.CheckState):
         if jpg_check == Qt.CheckState.Checked and self.raw_check == Qt.CheckState.Checked:
             suffix = RAW_FILES + JPG_FILES
-            self.count_files(suffix)
+            return self.count_files(suffix)
         elif jpg_check == Qt.CheckState.Checked:
-            self.count_files(JPG_FILES)
+            return self.count_files(JPG_FILES)
         elif raw_check == Qt.CheckState.Checked:
-            self.count_files(RAW_FILES)
+            return self.count_files(RAW_FILES)
+        return 0
 
     def count_files(self, suffix: set):
         with os.scandir(self.source_path) as entries:
             file_count = sum(1 for entry in entries if entry.is_file() and entry.name.lower().endswith(suffix))
         if file_count <= 0:
             self.error.emit("Nothing to import.")
-            self.finished_work.emit()
+            return 0
         else:
             self.file_count.emit(file_count)
+            return file_count
