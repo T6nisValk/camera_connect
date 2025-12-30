@@ -23,6 +23,7 @@ class ImportPictures(QObject, Ui_MainWindow):
         # Signals
         self.new_output_btn.clicked.connect(self.set_new_output_path)
         self.import_btn.clicked.connect(self.import_pictures)
+        self.import_and_delete_btn.clicked.connect(lambda: self.import_pictures(copy=False))
         self.progress_bar.valueChanged.connect(self.update_progress_color)
 
     def update_progress_color(self, value):
@@ -38,7 +39,7 @@ class ImportPictures(QObject, Ui_MainWindow):
         except Exception as e:
             self._show_error(str(e))
 
-    def import_pictures(self):
+    def import_pictures(self, copy=True):
         if not self.jpg_checkbox.isChecked() and not self.raw_checkbox.isChecked():
             self._show_error("No file type selected.")
             return

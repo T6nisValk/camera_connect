@@ -13,11 +13,12 @@ class IterateImages(QObject):
     file_count = Signal(int)
     error = Signal(str)
 
-    def __init__(self, output_path, source_path, check_states: dict):
+    def __init__(self, output_path, source_path, copy: bool, check_states: dict):
         super().__init__()
         self.output_path = output_path
         self.source_path = source_path
         self.jpg_check, self.raw_check = check_states.values()
+        self.copy = copy
 
     def run(self):
         try:
@@ -64,11 +65,17 @@ class IterateImages(QObject):
     def move_image(self, image: os.DirEntry, raw_folder: str = None, jpg_folder: str = None) -> bool:
         copied = False
         if raw_folder and image.name.lower().endswith(".arw"):
-            shutil.copy(image.path, raw_folder)
+            if self.copy:
+                shutil.copy(image.path, raw_folder)
+            else:
+                shutil.move(image.path, raw_folder)
             copied = True
 
         if jpg_folder and image.name.lower().endswith((".jpg", ".jpeg")):
-            shutil.copy(image.path, jpg_folder)
+            if self.copy:
+                shutil.copy(image.path, jpg_folder)
+            else:
+                shutil.move(image.path, jpg_folder)
             copied = True
 
         return copied

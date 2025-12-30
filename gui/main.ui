@@ -52,7 +52,21 @@ QProgressBar[finished=&quot;true&quot;]::chunk {
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QCheckBox" name="jpg_checkbox">
+      <property name="text">
+       <string>JPEG</string>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="2">
+     <widget class="QPushButton" name="import_btn">
+      <property name="text">
+       <string>Import</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
      <widget class="QPushButton" name="new_output_btn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -65,63 +79,24 @@ QProgressBar[finished=&quot;true&quot;]::chunk {
       </property>
      </widget>
     </item>
-    <item row="0" column="0" colspan="4">
-     <widget class="QProgressBar" name="progress_bar">
-      <property name="value">
-       <number>0</number>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <spacer name="horizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Expanding</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>75</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="import_btn">
-      <property name="text">
-       <string>Import</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3">
-     <spacer name="horizontalSpacer_2">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Policy::Expanding</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>75</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="0">
-     <widget class="QCheckBox" name="jpg_checkbox">
-      <property name="text">
-       <string>JPEG</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="1">
      <widget class="QCheckBox" name="raw_checkbox">
       <property name="text">
        <string>RAW</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="2">
+     <widget class="QPushButton" name="import_and_delete_btn">
+      <property name="text">
+       <string>Import and Delete</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="4">
+     <widget class="QProgressBar" name="progress_bar">
+      <property name="value">
+       <number>0</number>
       </property>
      </widget>
     </item>
