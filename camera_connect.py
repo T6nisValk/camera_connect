@@ -51,6 +51,7 @@ class ImportPictures(QObject, Ui_MainWindow):
         worker = IterateImages(
             self.output_path,
             SOURCE_PATH,
+            copy,
             {"jpg": self.jpg_checkbox.checkState(), "raw": self.raw_checkbox.checkState()},
         )
         worker.setObjectName("Image Worker")
