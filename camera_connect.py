@@ -1,13 +1,20 @@
 """Program to import pictures from a camera and organize them into folders by capture date."""
 
 from gui.main_ui import Ui_MainWindow
+from gui.settings_ui import Ui_Settings
 from image_worker import IterateImages
 from paths import DEFAULT_OUTPUT_PATH, ICON_PATH, SOURCE_PATH
 import sys
-from PySide6.QtWidgets import QMessageBox, QFileDialog, QMainWindow
+from PySide6.QtWidgets import QMessageBox, QFileDialog, QMainWindow, QDialog
 from PySide6.QtCore import QThread, QObject
 from PySide6.QtGui import QIcon
 import os
+
+
+class Settings(QDialog, Ui_Settings):
+    def __init__(self, parent=None):
+        super().__init__()
+        self.setupUi(self)
 
 
 class ImportPictures(QObject, Ui_MainWindow):
@@ -25,6 +32,12 @@ class ImportPictures(QObject, Ui_MainWindow):
         self.import_btn.clicked.connect(self.import_pictures)
         self.import_and_delete_btn.clicked.connect(lambda: self.import_pictures(copy=False))
         self.progress_bar.valueChanged.connect(self.update_progress_color)
+
+        self.settingsAction.triggered.connect(self.open_settings)
+
+    def open_settings(self):
+        settings_dialog = Settings(self)
+        settings_dialog.exec()
 
     def update_progress_color(self, value):
         if value < self.progress_bar.maximum():
