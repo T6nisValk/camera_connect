@@ -1,8 +1,8 @@
 
 build.cmd
 sign.cmd
+sign.ps1
 .venv/
 __pycache__/
 build/
-dist/
-main.spec
+

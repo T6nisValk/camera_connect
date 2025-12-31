@@ -16,6 +16,7 @@ class Settings(QDialog, Ui_Settings):
     def __init__(self, parent=None):
         super().__init__()
         self.setupUi(self)
+        self.settings_path = self.get_absolute_path("settings.json")
 
         self.current_settings()
 
@@ -52,7 +53,7 @@ class Settings(QDialog, Ui_Settings):
             },
         }
 
-        with open("settings.json", "w") as write:
+        with open(self.settings_path, "w") as write:
             json.dump(self.settings, write, indent=4)
 
         self.close()
@@ -70,9 +71,17 @@ class Settings(QDialog, Ui_Settings):
         self.rawCheckBox.setChecked(raw)
 
     def read_settings(self):
-        with open(r"settings.json", "r") as settings_file:
+        with open(self.settings_path, "r") as settings_file:
             settings = json.load(settings_file)
         return settings
+
+    def get_absolute_path(self, relative_path):
+        """Get absolute path to resource, works for dev and for PyInstaller."""
+        try:
+            base_path = sys._MEIPASS
+        except AttributeError:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
 
 
 class ImportPictures(QObject, Ui_MainWindow):
@@ -177,8 +186,9 @@ class ImportPictures(QObject, Ui_MainWindow):
 
     def read_settings(self):
         """Read settings from settings.json file."""
+        settings_path = self.get_absolute_path("settings.json")
         try:
-            with open("settings.json", "r") as settings_file:
+            with open(settings_path, "r") as settings_file:
                 settings = json.load(settings_file)
             return settings
         except (FileNotFoundError, json.JSONDecodeError):

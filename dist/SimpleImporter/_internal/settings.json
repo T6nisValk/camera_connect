@@ -1,0 +1,8 @@
+{
+    "OutputPath": "C:/Users/valk_to/Desktop",
+    "SourcePath": "C:/GPVDev/Projects/camera_connect/gui",
+    "FileTypes": {
+        "JPG": false,
+        "RAW": true
+    }
+}
