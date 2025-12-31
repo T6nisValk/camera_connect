@@ -45,15 +45,15 @@ class IterateImages(QObject):
             copied = False
 
             # --- Decide which folders to create ---
-            if self.jpg_check == Qt.CheckState.Checked and self.raw_check == Qt.CheckState.Checked:
+            if self.jpg_check and self.raw_check:
                 self.make_directories([creation_date_folder, jpg_folder, raw_folder])
                 copied = self.move_image(image, raw_folder=raw_folder, jpg_folder=jpg_folder)
 
-            elif self.jpg_check == Qt.CheckState.Checked:
+            elif self.jpg_check:
                 self.make_directories([creation_date_folder, jpg_folder])
                 copied = self.move_image(image, jpg_folder=jpg_folder)
 
-            elif self.raw_check == Qt.CheckState.Checked:
+            elif self.raw_check:
                 self.make_directories([creation_date_folder, raw_folder])
                 copied = self.move_image(image, raw_folder=raw_folder)
 
@@ -85,12 +85,12 @@ class IterateImages(QObject):
             os.makedirs(path, exist_ok=True)
 
     def check_states_before_counting(self, jpg_check: Qt.CheckState, raw_check: Qt.CheckState):
-        if jpg_check == Qt.CheckState.Checked and self.raw_check == Qt.CheckState.Checked:
+        if jpg_check and self.raw_check:
             suffix = RAW_FILES + JPG_FILES
             return self.count_files(suffix)
-        elif jpg_check == Qt.CheckState.Checked:
+        elif jpg_check:
             return self.count_files(JPG_FILES)
-        elif raw_check == Qt.CheckState.Checked:
+        elif raw_check:
             return self.count_files(RAW_FILES)
         return 0
 
